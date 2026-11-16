@@ -1,0 +1,7 @@
+# Minimal Supabase CLI config for this project.
+project_id = "cong_cu_trading"
+
+[functions.update-signals]
+# The function is called by pg_cron and protected by its own CRON_SECRET header,
+# so the platform JWT check is turned off.
+verify_jwt = false

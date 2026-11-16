@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tín hiệu Crypto 2–3 ngày</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
+  <script src="config.js"></script>
+</head>
+<body>
+  <header class="top">
+    <div class="brand">
+      <h1>Tín hiệu Crypto <span class="muted">· nắm giữ 2–3 ngày</span></h1>
+      <p class="sub" id="status">Đang tải…</p>
+    </div>
+    <div class="top-actions">
+      <div class="pill" id="fng" hidden></div>
+      <span class="pill mode" id="mode"></span>
+      <label class="auto"><input type="checkbox" id="auto" checked /> Tự làm mới 15'</label>
+      <button class="btn" id="refresh">↻ Cập nhật</button>
+    </div>
+  </header>
+
+  <div class="progress" id="progress" hidden><div class="bar" id="progress-bar"></div><span id="progress-text"></span></div>
+
+  <main>
+    <section class="summary" id="summary"></section>
+
+    <nav class="tabs" id="tabs">
+      <button data-tab="signals" class="active">Tín hiệu</button>
+      <button data-tab="journal" id="tab-journal" hidden>Nhật ký tín hiệu</button>
+      <button data-tab="method">Cách hoạt động</button>
+    </nav>
+
+    <section id="view-signals">
+      <div class="toolbar">
+        <div class="seg" id="filter">
+          <button data-f="ALL" class="active">Tất cả</button>
+          <button data-f="LONG">Long</button>
+          <button data-f="SHORT">Short</button>
+          <button data-f="NEUTRAL">Đứng ngoài</button>
+          <button data-f="WIN70" title="Chỉ hiện coin có tín hiệu Long/Short và backtest thắng ≥ 70% theo đúng hướng đó">Win ≥ 70%</button>
+        </div>
+        <div class="seg" id="sort">
+          <button data-s="rank" class="active">Vốn hóa</button>
+          <button data-s="score">Điểm mạnh nhất</button>
+          <button data-s="fresh">Tín hiệu mới</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="grid" id="grid">
+          <thead>
+            <tr>
+              <th>#</th><th>Coin</th><th class="r">Giá</th><th class="r">24h</th><th>7 ngày</th>
+              <th>Tín hiệu</th><th>Kế hoạch lệnh</th><th class="r">Backtest</th><th class="r">Funding</th>
+            </tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+      <div class="cards" id="cards"></div>
+      <p class="skipped" id="skipped"></p>
+    </section>
+
+    <section id="view-journal" hidden>
+      <div class="journal-stats" id="journal-stats"></div>
+      <div class="table-wrap">
+        <table class="grid journal">
+          <thead><tr><th>Mở lúc</th><th>Coin</th><th>Hướng</th><th class="r">Entry</th><th class="r">SL</th><th class="r">TP1</th><th class="r">TP2</th><th>Trạng thái</th><th class="r">Kết quả</th></tr></thead>
+          <tbody id="journal-rows"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="view-method" hidden class="method">
+      <h2>Tín hiệu được tính như thế nào</h2>
+      <p>Mỗi coin lấy ~1000 nến <b>4 giờ</b> (≈ 5,5 tháng) từ Binance (dự phòng Bybit/OKX). Danh sách là 20 đồng vốn hóa lớn nhất trên CoinGecko, <b>đã loại stablecoin, token bọc/staking và token vàng/RWA</b> vì không có ý nghĩa để Long/Short.</p>
+      <p>Điểm tín hiệu từ −100 đến +100 là tổng có trọng số của:</p>
+      <table class="weights">
+        <tr><td>Xu hướng khung ngày</td><td>25</td><td>Giá so với EMA120 và EMA300 trên 4H (≈ EMA20/EMA50 khung ngày)</td></tr>
+        <tr><td>Xu hướng 4H</td><td>20</td><td>EMA21 so với EMA55 và độ dốc EMA21</td></tr>
+        <tr><td>Động lượng MACD</td><td>15</td><td>Histogram MACD(12,26,9) dương/âm và đang mạnh lên hay yếu đi</td></tr>
+        <tr><td>RSI(14)</td><td>15</td><td>50–68 ủng hộ Long, 32–50 ủng hộ Short; vùng quá mua/quá bán bị trừ điểm vì dễ hồi</td></tr>
+        <tr><td>ADX / DMI</td><td>10</td><td>Xu hướng có đủ mạnh không; ADX &lt; 15 thì toàn bộ điểm bị giảm 25%</td></tr>
+        <tr><td>Sức mạnh so với BTC</td><td>10</td><td>Hiệu suất 3 ngày so với Bitcoin</td></tr>
+        <tr><td>Khối lượng</td><td>5</td><td>Khối lượng tăng xác nhận hướng giá</td></tr>
+        <tr><td>Funding rate</td><td>5</td><td>Funding quá cao/thấp = đám đông lệch một phía, rủi ro bị quét (chỉ dùng cho tín hiệu hiện tại)</td></tr>
+      </table>
+      <p><b>≥ +40: LONG</b> · <b>≤ −40: SHORT</b> · còn lại: <b>Đứng ngoài</b>. Từ ±60 trở lên được đánh dấu “Mạnh”. Tín hiệu dùng nến 4H <b>đã đóng</b>, nên chỉ thay đổi mỗi 4 giờ (07:00, 11:00, 15:00, 19:00, 23:00, 03:00 giờ VN).</p>
+      <h3>Kế hoạch lệnh</h3>
+      <ul>
+        <li><b>Stop loss</b> = 3 × ATR(14, 4H) — đây là 1R (mức rủi ro).</li>
+        <li><b>TP1</b> = 0,8 × ATR (≈ 0,27R): chốt 50% vị thế và <b>dời SL về điểm vào lệnh</b>. Từ đây lệnh không thể lỗ nữa.</li>
+        <li><b>TP2</b> = 3 × ATR (1R): chốt phần còn lại.</li>
+        <li><b>Giới hạn thời gian</b>: sau 72 giờ (18 nến 4H) chưa chạm SL/TP2 thì đóng lệnh theo giá thị trường.</li>
+        <li>Khối lượng gợi ý: chỉ rủi ro 0,5–1% tài khoản cho mỗi lệnh. Ví dụ tài khoản 1.000 USD, rủi ro 1% = 10 USD, SL cách 4% → vị thế 250 USD.</li>
+      </ul>
+      <h3>Vì sao tỷ lệ thắng ~70%, và điều cần biết</h3>
+      <p>Cấu hình này được chọn để <b>tỷ lệ lệnh có lãi ≥ 70%</b>: TP1 rất gần nên phần lớn lệnh chạm TP1 trước, sau đó SL về hòa vốn nên lệnh được tính là “có lãi”. Đổi lại, <b>lệnh thua mất trọn 1R, còn lệnh thắng thường chỉ lãi 0,13–0,6R</b>. Trên backtest ~600 lệnh của 20 coin, đổi từ cấu hình SL 2 ATR / TP 1R–2R (win ~49%) sang cấu hình này (win ~73%) <b>không làm R trung bình tốt lên</b> — cả hai đều quanh 0. Win% cao giúp tâm lý dễ chịu hơn, nhưng thứ quyết định lãi/lỗ là <b>R TB</b>. Hãy luôn nhìn hai con số cùng nhau.</p>
+      <h3>Backtest</h3>
+      <p>Cột “Backtest” chạy đúng quy tắc trên lại trên dữ liệu quá khứ của từng coin: vào lệnh ở nến đóng khi tín hiệu <i>vừa chuyển</i> sang Long/Short, mỗi lúc một lệnh, trừ phí 0,08%/vòng, nếu cùng một nến chạm cả SL và TP thì tính là SL. <b>Win%</b> là tỷ lệ lệnh có lãi, <b>R TB</b> là lãi/lỗ trung bình mỗi lệnh tính theo R. R TB &gt; 0 mới là có lợi thế; quanh 0 nghĩa là chiến lược không thắng được thị trường trong giai đoạn đó.</p>
+      <p class="warn">⚠️ Đây là công cụ phân tích kỹ thuật tự động, <b>không phải lời khuyên đầu tư</b>. Backtest trên ~5 tháng dữ liệu không đảm bảo kết quả tương lai. Giao dịch phái sinh có đòn bẩy có thể mất toàn bộ vốn ký quỹ.</p>
+    </section>
+  </main>
+
+  <footer>
+    Dữ liệu: CoinGecko · Binance · Bybit · OKX · alternative.me. Không phải lời khuyên đầu tư — tự chịu trách nhiệm với quyết định giao dịch của bạn.
+  </footer>
+
+  <dialog id="detail">
+    <div class="dlg-head">
+      <div id="dlg-title"></div>
+      <button class="btn ghost" id="dlg-close" aria-label="Đóng">✕</button>
+    </div>
+    <div class="dlg-body">
+      <div id="chart" class="chart"></div>
+      <div class="legend"><span class="l21">EMA21</span><span class="l55">EMA55</span><span class="l120">EMA120</span><span class="lsl">SL</span><span class="ltp">TP1 / TP2</span></div>
+      <div class="dlg-grid">
+        <div>
+          <h3>Thành phần điểm</h3>
+          <div id="parts"></div>
+        </div>
+        <div>
+          <h3>Kế hoạch lệnh</h3>
+          <div id="plan"></div>
+          <h3>Backtest</h3>
+          <div id="bt"></div>
+        </div>
+      </div>
+      <h3>Các lệnh backtest gần nhất</h3>
+      <div class="table-wrap"><table class="grid small" id="trades"></table></div>
+    </div>
+  </dialog>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
